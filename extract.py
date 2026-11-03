@@ -69,22 +69,26 @@ def parse(path):
 
 
 def validate(recs):
-    seen, counts = {}, Counter(r.get("invoice_no") for r in recs if r.get("invoice_no"))
+    counts = Counter(r["invoice_no"].upper() for r in recs if r.get("invoice_no"))
     for r in recs:
         flags = []
         if r.get("error"):
             r["flags"] = r["error"]
             continue
-        if r["subtotal"] is not None and r["tax"] is not None and r["total"] is not None:
+        if all(r[k] is not None for k in ("subtotal", "tax", "total")):
             if abs((r["subtotal"] + r["tax"]) - r["total"]) > 0.02:
                 flags.append("arithmetic mismatch")
-        if counts[r["invoice_no"]] > 1:
+        else:
+            flags.append("amount not parsed")
+        if not r.get("invoice_no"):
+            flags.append("missing invoice no")
+        elif counts[r["invoice_no"].upper()] > 1:
             flags.append("duplicate invoice number")
+        if not r.get("issued"):
+            flags.append("missing issue date")
         if not r.get("due"):
             flags.append("missing due date")
-        if rec := r.get("issued"):
-            pass
-        if r.get("issued") and r.get("due") and r["due"] < r["issued"]:
+        elif r.get("issued") and r["due"] < r["issued"]:
             flags.append("due before issue")
         if (r.get("total_usd") or 0) > OUTLIER_USD:
             flags.append("outlier amount, verify")

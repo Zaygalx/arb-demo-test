@@ -13,8 +13,9 @@ arithmetic, and splits the batch:
 - `out/invoices.csv`, rows that are safe to post to the ledger
 - `out/exceptions.csv`, rows a human must look at, each with the reason
 
-Checks included: line item totals against the stated total, duplicate invoice
-numbers across suppliers, a USD threshold for outliers, and a missing-text-layer
+Checks included: header arithmetic (subtotal plus tax against the stated total),
+duplicate invoice numbers across suppliers (case folded), a USD threshold for
+outliers, unparsed amounts, missing issue or due dates, and a missing text layer
 detection so a scanned image is reported instead of silently dropped.
 
 ## Run it

@@ -14,9 +14,10 @@ arithmetic, and splits the batch:
 - `out/exceptions.csv`, rows a human must look at, each with the reason
 
 Checks included: header arithmetic (subtotal plus tax against the stated total),
-duplicate invoice numbers across suppliers (case folded), a USD threshold for
-outliers, unparsed amounts, missing issue or due dates, and a missing text layer
-detection so a scanned image is reported instead of silently dropped.
+duplicate invoice numbers across suppliers (case folded, punctuation ignored), a USD
+threshold for outliers, unparsed amounts, missing issue or due dates, an unidentified
+vendor, and a missing text layer detection so a scanned image is reported instead of
+silently dropped.
 
 ## Run it
 

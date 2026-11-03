@@ -46,7 +46,7 @@ def parse(path):
         return {"file": path.name, "error": "no text layer, needs OCR"}
 
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    num = re.search(r"Invoice no:\s*([A-Za-z0-9\-/]+)", text)
+    num = re.search(r"Invoice no:\s*([^\n]+)", text)
     issued = re.search(r"Issued:\s*([^\n]+)", text)
     due = re.search(r"Due:\s*([^\n]+)", text)
     sub, cur = money(text, r"Subtotal\s*" + MONEY)
@@ -56,7 +56,7 @@ def parse(path):
     rec = {
         "file": path.name,
         "vendor": lines[0] if lines else None,
-        "invoice_no": num.group(1) if num else None,
+        "invoice_no": num.group(1).strip() if num else None,
         "issued": parse_date(issued.group(1)) if issued else None,
         "due": parse_date(due.group(1)) if due else None,
         "currency": cur2 or cur,
@@ -68,8 +68,12 @@ def parse(path):
     return rec
 
 
+def norm_id(value):
+    return re.sub(r"[^A-Z0-9]", "", (value or "").upper())
+
+
 def validate(recs):
-    counts = Counter(r["invoice_no"].upper() for r in recs if r.get("invoice_no"))
+    counts = Counter(norm_id(r["invoice_no"]) for r in recs if r.get("invoice_no"))
     for r in recs:
         flags = []
         if r.get("error"):
@@ -82,8 +86,10 @@ def validate(recs):
             flags.append("amount not parsed")
         if not r.get("invoice_no"):
             flags.append("missing invoice no")
-        elif counts[r["invoice_no"].upper()] > 1:
+        elif counts[norm_id(r["invoice_no"])] > 1:
             flags.append("duplicate invoice number")
+        if not r.get("vendor") or re.match(r"(?i)^(invoice|receipt|bill|statement)\b", r["vendor"]):
+            flags.append("vendor not identified")
         if not r.get("issued"):
             flags.append("missing issue date")
         if not r.get("due"):
